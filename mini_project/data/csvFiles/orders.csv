@@ -1,0 +1,28 @@
+ord_no,res_id,cust_mobile,ITEM_NAME,QTY,ord_status,ord_pay_status
+101,100,8945686545,Chicken Fried Rice,2,delivered,paid
+102,140,9856853320,Poached Pear,2,delivered,paid
+103,130,8975554848,Tandoori Roti,15,delivered,paid
+104,160,6548992225,Chicken Wings,7,delivered,paid
+105,120,9873214565,Special Biriyani,4,delivered,paid
+106,110,9945548458,Mutton kosha,3,delivered,paid
+107,180,8945659522,Tandoori Chicken,8,delivered,paid
+108,150,7908625899,Chicken Roll,5,delivered,paid
+109,170,8975554848,Smoked Lamb,3,delivered,paid
+110,100,8997553243,Paneer Tikka,5,delivered,paid
+111,130,8975554848,Momo,4,delivered,paid
+112,120,8979851355, Mutton Biriyani,5,delivered,paid
+113,150,8989999565,Chowmine,7,delivered,paid
+114,140,6548992225,Smoked Chicken,1,delivered,paid
+115,110,9945548458,Veg Biriyani,2,delivered,paid
+116,100,8945659522,Egg Biriyani,3,delivered,paid
+117,130,8979851355,Chicken Roll,2,delivered,paid
+118,150,8658812662,Momo,10,delivered,paid
+119,110,7895553526,Chicken Biriyani,3,delivered,paid
+120,140,9856853320,Mutton Mughlai Special,2,delivered,paid
+121,170,7908625899,Calamari Rings,2,delivered,paid
+122,120,9873214565,Kadhai Chicken,2,delivered,paid
+123,180,8975554848,Chicken Kebab,6,delivered,paid
+124,100,8945686545,Mixed Fried Rice,1,delivered,paid
+125,140,6548992225,Spaghetti,3,delivered,paid
+126,160,6548992225,Kadhai Chicken,4,delivered,paid
+127,161,6548992226,Kadhai Chicken,5,delivered,paid

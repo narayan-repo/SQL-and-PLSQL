@@ -1,0 +1,281 @@
+SQL> create table customer
+  2  (
+  3  cust_mobile number(10) constraint cust_mob_pk primary key,
+  4  cust_name varchar2(40) constraint cust_name_nn not null,
+  5  cust_addr varchar2(60) constraint cust_addr_nn not null,
+  6  cust_city varchar2(30) constraint cust_city_nn not null,
+  7  constraint cust_mob_chk check (regexp_like(cust_mobile,'^\d{10}$'))
+  8  );
+
+Table created.
+
+SQL> create table USER_LOGIN
+  2  (
+  3  log_id number(10) constraint log_id_pk primary key,
+  4  log_pass varchar2(15) constraint log_pass_nn not null,
+  5  user_type varchar2(10) constraint user_type_nn not null,
+  6  constraint login_cust_mobile_fk foreign key (log_id) references customer(cust_mobile)
+  7  );
+
+Table created.
+
+SQL> create table restaurant
+  2  (
+  3  res_id number(10) constraint res_id_pk primary key,
+  4  res_name varchar2(40)constraint res_name_nn not null,
+  5  res_addr varchar2(60)constraint res_addr_nn not null,
+  6  res_city varchar2(30)constraint res_city_nn not null,
+  7  res_contact_no number(10)constraint res_contact_no_nn not null,
+  8  res_cost_for2 number(10)constraint res_cost_for2_nn not null,
+  9  res_details varchar2(60)constraint res_details_nn not null,
+ 10  res_rating number(3,1)constraint res_rating_chk check(res_rating<=10)
+ 11  );
+
+Table created.
+
+SQL> create table orders
+  2  (ord_no number(10) constraint ord_no_pk primary key,
+  3  res_id number(10) constraint res_id_nn not null,
+  4  cust_mobile number(10) constraint cust_mobile_nn not null ,
+  5  item_name varchar2(30) constraint item_name_nn not null,
+  6  qty number(2) constraint qty_nn not null,
+  7  ord_status varchar2(10),
+  8  ord_pay_status varchar2(10),
+  9  constraint res_id_fk foreign key(res_id) references restaurant(res_id),
+ 10  constraint cust_mobile_fk foreign key(cust_mobile) references customer(cust_mobile)
+ 11  ) ;
+
+Table created.
+
+SQL> create table menu
+  2  (
+  3  res_id number(10) constraint menu_res_id_fk references restaurant(res_id),
+  4  item_name varchar2(30),
+  5  item_cost number(8,2),
+  6  qty_avl number(10),
+  7  status varchar2(10),
+  8  constraint menu_pk primary key(res_id,item_name)
+  9  );
+
+Table created.
+
+SQL> create table transactions
+  2  (
+  3  trans_id number(10) constraint trans_pk primary key,
+  4  ord_no number(10) constraint trans_ord_no_nn not null,
+  5  ord_amt number(10),
+  6  mode_paymt varchar2(20),
+  7  constraint trans_ord_no_fk foreign key(ord_no) references orders(ord_no),
+  8  constraint trans_ord_no_unique unique (ord_no)
+  9  );
+
+Table created.
+
+SQL> ------------BEGINNING----------------
+SQL>
+SQL> CREATE OR REPLACE PROCEDURE food_ordering_system IS
+  2  BEGIN
+  3  dbms_output.put_line('Are you an existing customer? Then please write');
+  4  dbms_output.put_line('EXEC login(<Your Login ID>,<Your Login Password>)');
+  5  dbms_output.put_line('New User? Then Please write');
+  6  dbms_output.put_line('EXEC reg_cust(<Your mobile ID>,<Your Name>,<Address>,<City>,<Password>)');
+  7  END;
+  8  /
+
+Procedure created.
+
+
+SQL> CREATE OR REPLACE PROCEDURE REG_CUST(
+  2  P_CUST_MOBILE CUSTOMER.CUST_MOBILE%TYPE,
+  3  P_CUST_NAME CUSTOMER.CUST_NAME%TYPE,
+  4  P_CUST_ADDR CUSTOMER.CUST_ADDR%TYPE,
+  5  P_CUST_CITY CUSTOMER.CUST_CITY%TYPE,
+  6  P_USER_PASSWORD USER_LOGIN.LOG_PASS%TYPE
+  7  ) IS
+  8  CURSOR CUR_MOBILE IS SELECT CUST_MOBILE FROM CUSTOMER;
+  9  FLAG CHAR:='T'; ---FLAG TO CHECK WHETHER CUSTOMER ALREADY PRESENT
+ 10  CHECK_CONSTRAINT_VIOLATED EXCEPTION;
+ 11  PRAGMA EXCEPTION_INIT ( CHECK_CONSTRAINT_VIOLATED, -2290 );
+ 12  BEGIN
+ 13  FOR MOB IN CUR_MOBILE LOOP
+ 14  IF MOB.CUST_MOBILE=P_CUST_MOBILE THEN
+ 15  FLAG:='F';
+ 16  EXIT;
+ 17  END IF;
+ 18  END LOOP;
+ 19  IF FLAG='T' THEN
+ 20  INSERT INTO CUSTOMER
+ 21  VALUES(P_CUST_MOBILE,P_CUST_NAME,P_CUST_ADDR,P_CUST_CITY);
+ 22  IF SQL%FOUND THEN
+ 23  INSERT INTO USER_LOGIN
+ 24  VALUES(P_CUST_MOBILE,P_USER_PASSWORD,'CUSTOMER');
+ 25  END IF;
+ 26  COMMIT;
+ 27  DBMS_OUTPUT.PUT_LINE('CUSTOMER REGISTERED');
+ 28  DBMS_OUTPUT.PUT_LINE('PLEASE LOGIN BY WRITING');
+ 29  DBMS_OUTPUT.PUT_LINE('EXEC LOGIN(<YOUR ID>,<YOUR PASSWORD>)');
+ 30  ELSE
+ 31  DBMS_OUTPUT.PUT_LINE('ACCOUNT ALREADY PRESENT WITH CURRENT NUMBER');
+ 32  END IF;
+ 33  EXCEPTION
+ 34  WHEN DUP_VAL_ON_INDEX THEN
+ 35  DBMS_OUTPUT.PUT_LINE('ACCOUNT ALREADY PRESENT');
+ 36  WHEN CHECK_CONSTRAINT_VIOLATED THEN
+ 37  DBMS_OUTPUT.PUT_LINE('CHECK CONSTRAINTS VIOLATED');
+ 38  DBMS_OUTPUT.PUT_LINE('CUSTOMER NOT REGISTERED');
+ 39  END REG_CUST;
+ 40  /
+
+Procedure created.
+
+
+SQL> CREATE OR REPLACE PROCEDURE LOGIN(P_LOGID USER_LOGIN.LOG_ID%TYPE,P_LOG_PASS USER_LOGIN.LOG_PASS%TYPE) IS
+  2  CURSOR CUR_USER_LOGIN IS SELECT * FROM USER_LOGIN;
+  3  CURSOR CUR_RES_DETAILS IS SELECT * FROM RESTAURANT;
+  4  FLAG USER_LOGIN%ROWTYPE;
+  5  BEGIN
+  6  SELECT * INTO FLAG FROM USER_LOGIN WHERE LOG_ID=P_LOGID AND LOG_PASS=P_LOG_PASS;
+  7  IF SQL%FOUND THEN
+  8  DBMS_OUTPUT.PUT_LINE('LOGGED IN');
+  9  FOR RES IN CUR_RES_DETAILS LOOP
+ 10  DBMS_OUTPUT.PUT_LINE(RES.RES_ID||'--'||
+ 11  RPAD(RES.RES_NAME,30)||'--'||
+ 12  RES.RES_CONTACT_NO||'--'||
+ 13  RPAD(RES.RES_DETAILS,30)||'--'||
+ 14  RES.RES_RATING);
+ 15  END LOOP;
+ 16  DBMS_OUTPUT.PUT_LINE('TO SELECT A RESTAURANT WRITE: ');
+ 17  DBMS_OUTPUT.PUT_LINE('EXEC SHOW_MENU(<RES_ID>)');
+ 18  END IF;
+ 19
+ 20  EXCEPTION
+ 21  WHEN NO_DATA_FOUND THEN
+ 22  DBMS_OUTPUT.PUT_LINE('USERNAME/PASSWORD WRONG');
+ 23  END;
+ 24  /
+
+Procedure created.
+
+
+SQL> CREATE OR REPLACE PROCEDURE SHOW_MENU(V_RES_ID RESTAURANT.RES_ID%TYPE) IS
+  2  CURSOR CUR_MENU IS SELECT * FROM MENU WHERE RES_ID=V_RES_ID;
+  3  V_RES_ID_VERIFY RESTAURANT.RES_ID%TYPE;
+  4  BEGIN
+  5  SELECT RES_ID INTO V_RES_ID_VERIFY FROM RESTAURANT WHERE RES_ID=V_RES_ID;
+  6  FOR I IN CUR_MENU LOOP
+  7  DBMS_OUTPUT.PUT_LINE(V_RES_ID||'----'||RPAD(I.ITEM_NAME,40)||' RS.'||I.ITEM_COST);
+  8  END LOOP;
+  9  DBMS_OUTPUT.PUT_LINE('TO PLACE AN ORDER, WRITE');
+ 10  DBMS_OUTPUT.PUT_LINE('EXEC PLACE_ORDER(<YOUR MOBILE NUMBER>,<RES_ID>,<ITEM_NAME>,<QTY>)');
+ 11  EXCEPTION
+ 12  WHEN NO_DATA_FOUND THEN
+ 13  DBMS_OUTPUT.PUT_LINE('WRONG RESTAURANT ID');
+ 14  END;
+ 15
+ 16  /
+
+Procedure created.
+
+
+SQL> CREATE OR REPLACE PROCEDURE PLACE_ORDER(P_CUST_MOBILE ORDERS.CUST_MOBILE%TYPE,
+  2  P_RES_ID ORDERS.RES_ID%TYPE,
+  3  P_ITEM_NAME ORDERS.ITEM_NAME%TYPE,
+  4  P_QTY ORDERS.QTY%TYPE) IS
+  5  CURSOR CUR_ITEM_DETAILS IS SELECT * FROM MENU WHERE RES_ID=P_RES_ID AND ITEM_NAME=P_ITEM_NAME;
+  6  V_QTY_AVL MENU.QTY_AVL%TYPE;
+  7  V_ITEM_ROW CUR_ITEM_DETAILS%ROWTYPE;
+  8  V_NEXT_ORDNO ORDERS.ORD_NO%TYPE;
+  9  BEGIN
+ 10  OPEN CUR_ITEM_DETAILS;
+ 11  FETCH CUR_ITEM_DETAILS INTO V_ITEM_ROW;
+ 12  IF V_ITEM_ROW.QTY_AVL-P_QTY<0 THEN
+ 13  DBMS_OUTPUT.PUT_LINE('ITEMS QUANTITY UNAVAILABLE');
+ 14  DBMS_OUTPUT.PUT_LINE('NO OF ITEMS PRESENT: '||V_ITEM_ROW.QTY_AVL);
+ 15  ELSIF V_ITEM_ROW.QTY_AVL-P_QTY>=0 THEN
+ 16  UPDATE MENU
+ 17  SET QTY_AVL=QTY_AVL-P_QTY
+ 18  WHERE RES_ID=P_RES_ID AND ITEM_NAME=P_ITEM_NAME;
+ 19  SELECT MAX(ORD_NO) + 1 INTO V_NEXT_ORDNO FROM ORDERS;
+ 20  INSERT INTO ORDERS
+ 21  VALUES(V_NEXT_ORDNO,P_RES_ID,P_CUST_MOBILE,P_ITEM_NAME,P_QTY,'PENDING','PENDING');
+ 22  COMMIT;
+ 23  DBMS_OUTPUT.PUT_LINE('=====================B I L L=========================');
+ 24  DBMS_OUTPUT.NEW_LINE;
+ 25  DBMS_OUTPUT.PUT_LINE('                  ORDER PLACED');
+ 26  DBMS_OUTPUT.PUT_LINE('ORDER NO: '||LPAD(V_NEXT_ORDNO,43,'-'));
+ 27  DBMS_OUTPUT.PUT_LINE('RESTAURANT ID: '||LPAD(P_RES_ID,38,'-'));
+ 28  DBMS_OUTPUT.PUT_LINE('ITEM NAME: '||LPAD(P_ITEM_NAME,42,'-'));
+ 29  DBMS_OUTPUT.PUT_LINE('QUANTITY: '||LPAD(P_QTY,43,'-'));
+ 30  DBMS_OUTPUT.PUT_LINE('ORDER AMOUNT: Rs. '||LPAD(P_QTY*V_ITEM_ROW.ITEM_COST,35,'-'));
+ 31  DBMS_OUTPUT.PUT_LINE('PAYMENT STATUS:'|| LPAD('PENDING',38,'-'));
+ 32  DBMS_OUTPUT.PUT_LINE('DELIVERY STATUS:'|| LPAD('PENDING',37,'-'));
+ 33  DBMS_OUTPUT.PUT_LINE('FOR PAYMENT PLEASE WRITE:');
+ 34  DBMS_OUTPUT.PUT_LINE('EXEC PAYMENT(<YOUR ORDNO>,<AMOUNT>,<MODE OF PAYMENT>)');
+ 35  END IF;
+ 36  SELECT QTY_AVL INTO V_QTY_AVL FROM MENU WHERE RES_ID=P_RES_ID AND ITEM_NAME=P_ITEM_NAME;
+ 37  IF V_QTY_AVL=0 THEN
+ 38  UPDATE MENU
+ 39  SET STATUS = 'UNAVAILABLE'
+ 40  WHERE RES_ID=P_RES_ID AND ITEM_NAME=P_ITEM_NAME;
+ 41  END IF;
+ 42  CLOSE CUR_ITEM_DETAILS;
+ 43  EXCEPTION
+ 44  WHEN OTHERS THEN
+ 45  DBMS_OUTPUT.PUT_LINE('WRONG DATA ENTERED. PLEASE TRY AGAIN');
+ 46  END PLACE_ORDER;
+ 47  /
+
+
+Procedure created.
+
+SQL> CREATE OR REPLACE PROCEDURE PAYMENT(V_ORDNO ORDERS.ORD_NO%TYPE,
+  2  V_ORD_AMT TRANSACTIONS.ORD_AMT%TYPE,
+  3  V_MODE_PAYMT TRANSACTIONS.MODE_PAYMT%TYPE) IS
+  4  CURSOR ORDER_DETAILS IS SELECT ORD_NO,ITEM_NAME,QTY,ORD_STATUS,ORD_PAY_STATUS FROM ORDERS;
+  5  ORD_ROW ORDER_DETAILS%ROWTYPE;
+  6  TRANS_NEXT_NO TRANSACTIONS.TRANS_ID%TYPE;
+  7  V_TRANS_ORD_AMT NUMBER;
+  8  BEGIN
+  9  SELECT ORD_NO,ITEM_NAME,QTY,ORD_STATUS,ORD_PAY_STATUS INTO ORD_ROW FROM ORDERS WHERE ORD_NO=V_ORDNO;
+ 10  IF ORD_ROW.ORD_STATUS='PENDING' AND ORD_ROW.ORD_PAY_STATUS='PENDING' THEN
+ 11  SELECT O.QTY*M.ITEM_COST INTO V_TRANS_ORD_AMT
+ 12  FROM ORDERS O JOIN MENU M ON M.RES_ID=O.RES_ID AND M.ITEM_NAME=O.ITEM_NAME
+ 13  WHERE O.ORD_NO=V_ORDNO;
+ 14  IF V_TRANS_ORD_AMT=V_ORD_AMT THEN
+ 15  SELECT MAX(TRANS_ID) + 1 INTO TRANS_NEXT_NO FROM TRANSACTIONS;
+ 16  INSERT INTO TRANSACTIONS
+ 17  VALUES(TRANS_NEXT_NO,V_ORDNO,V_ORD_AMT,V_MODE_PAYMT);
+ 18  COMMIT;
+ 19  DBMS_OUTPUT.PUT_LINE('PAYMENT DONE');
+ 20  DBMS_OUTPUT.PUT_LINE('ORDER PROCESSED');
+ 21  ELSE
+ 22  DBMS_OUTPUT.PUT_LINE('PAY AMOUNT NOT CORRECT');
+ 23  DBMS_OUTPUT.PUT_LINE('PAYMENT FAILED');
+ 24  END IF;
+ 25  ELSE
+ 26  DBMS_OUTPUT.PUT_LINE('ORDER AMOUNT IS ALREADY PAID');
+ 27  DBMS_OUTPUT.PUT_LINE('PAYMENT FAILED');
+ 28  END IF;
+ 29  EXCEPTION
+ 30  WHEN NO_DATA_FOUND THEN
+ 31  DBMS_OUTPUT.PUT_LINE('INVALID ORDER NO');
+ 32  DBMS_OUTPUT.PUT_LINE('PAYMENT FAILED');
+ 33  END;
+ 34  /
+
+
+Procedure created.
+
+SQL> CREATE OR REPLACE TRIGGER TRANS_INSERT_TRIGGER
+  2  AFTER INSERT ON TRANSACTIONS FOR EACH ROW
+  3  DECLARE
+  4  V_ORD_ROW ORDERS%ROWTYPE;
+  5  BEGIN
+  6  UPDATE ORDERS
+  7  SET ORD_STATUS='DELIVERED', ORD_PAY_STATUS='PAID'
+  8  WHERE ORD_NO=:NEW.ORD_NO;
+  9  END;
+ 10  /
+
+Trigger created.
+

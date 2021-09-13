@@ -1,0 +1,9 @@
+------------BEGINNING----------------
+
+CREATE OR REPLACE PROCEDURE food_ordering_system IS
+BEGIN
+	dbms_output.put_line('Are you an existing customer? Then please write');
+	dbms_output.put_line('EXEC login(<Your Login ID>,<Your Login Password>)');
+	dbms_output.put_line('New User? Then Please write');
+	dbms_output.put_line('EXEC reg_cust(<Your mobile ID>,<Your Name>,<Address>,<City>,<Password>)');
+END;

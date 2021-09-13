@@ -1,0 +1,59 @@
+
+SQL*Loader: Release 11.2.0.2.0 - Production on Wed Sep 8 00:16:34 2021
+
+Copyright (c) 1982, 2009, Oracle and/or its affiliates.  All rights reserved.
+
+Control File:   orders.ctl
+Data File:      C:\Users\user.DESKTOP-HAAH44U\Desktop\SPRINT_CAPG\DATA\csvFiles\orders.csv
+  Bad File:     orders.bad
+  Discard File:  none specified
+ 
+ (Allow all discards)
+
+Number to load: ALL
+Number to skip: 0
+Errors allowed: 50
+Bind array:     64 rows, maximum of 256000 bytes
+Continuation:    none specified
+Path used:      Conventional
+
+Table ORDERS, loaded from every logical record.
+Insert option in effect for this table: INSERT
+
+   Column Name                  Position   Len  Term Encl Datatype
+------------------------------ ---------- ----- ---- ---- ---------------------
+ORD_NO                              FIRST     *   ,       CHARACTER            
+RES_ID                               NEXT     *   ,       CHARACTER            
+CUST_MOBILE                          NEXT     *   ,       CHARACTER            
+ITEM_NAME                            NEXT     *   ,       CHARACTER            
+QTY                                  NEXT     *   ,       CHARACTER            
+ORD_STATUS                           NEXT     *   ,       CHARACTER            
+ORD_PAY_STATUS                       NEXT     *   ,       CHARACTER            
+
+Record 1: Rejected - Error on table ORDERS, column ORD_NO.
+ORA-01722: invalid number
+
+Record 28: Rejected - Error on table ORDERS.
+ORA-02291: integrity constraint (FOOD_DELIVERY.CUST_MOBILE_FK) violated - parent key not found
+
+
+Table ORDERS:
+  26 Rows successfully loaded.
+  2 Rows not loaded due to data errors.
+  0 Rows not loaded because all WHEN clauses were failed.
+  0 Rows not loaded because all fields were null.
+
+
+Space allocated for bind array:                 115584 bytes(64 rows)
+Read   buffer bytes: 1048576
+
+Total logical records skipped:          0
+Total logical records read:            28
+Total logical records rejected:         2
+Total logical records discarded:        0
+
+Run began on Wed Sep 08 00:16:34 2021
+Run ended on Wed Sep 08 00:16:35 2021
+
+Elapsed time was:     00:00:00.92
+CPU time was:         00:00:00.05
